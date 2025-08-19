@@ -1,21 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductList from './ProductList';
+import ProductFilters from './ProductFilters';
 import './App.css';
 
 function App() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    category: 'all',
+    inStock: ''
+  });
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [filters]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3000/products');
+      const params = new URLSearchParams();
+      
+      if (filters.category !== 'all') {
+        params.append('category', filters.category);
+      }
+      
+      if (filters.inStock !== '') {
+        params.append('inStock', filters.inStock);
+      }
+
+      const response = await axios.get(`http://localhost:3000/products?${params}`);
       setProducts(response.data);
       setError(null);
     } catch (err) {
@@ -85,6 +100,11 @@ function App() {
         <h1>Music Store</h1>
         <p>Quality instruments for musicians of all levels</p>
       </header>
+
+      <ProductFilters 
+        filters={filters}
+        onFilterChange={setFilters}
+      />
 
       <ProductList 
         products={products}

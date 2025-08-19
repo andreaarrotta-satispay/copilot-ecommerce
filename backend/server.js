@@ -9,7 +9,24 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.get('/products', (req, res) => {
-    res.json(products);
+    let filteredProducts = [...products];
+    
+    const { category, inStock } = req.query;
+    
+    if (category && category !== 'all') {
+        filteredProducts = filteredProducts.filter(product => 
+            product.category.toLowerCase() === category.toLowerCase()
+        );
+    }
+    
+    if (inStock !== undefined) {
+        const stockFilter = inStock === 'true';
+        filteredProducts = filteredProducts.filter(product => 
+            product.inStock === stockFilter
+        );
+    }
+    
+    res.json(filteredProducts);
 });
 
 app.post('/cart', (req, res) => {
