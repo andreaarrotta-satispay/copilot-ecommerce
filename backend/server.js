@@ -29,6 +29,11 @@ app.get('/products', (req, res) => {
     res.json(filteredProducts);
 });
 
+app.get('/categories', (req, res) => {
+    const categories = [...new Set(products.map(product => product.category))];
+    res.json(categories.sort());
+});
+
 app.post('/cart', (req, res) => {
   res.json({ message: 'Cart endpoint - add product to cart' });
 });
