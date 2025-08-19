@@ -91,14 +91,9 @@ function App() {
 
   return (
     <div className="App">
-      <header style={{
-        backgroundColor: '#f8f9fa',
-        padding: '20px',
-        textAlign: 'center',
-        borderBottom: '1px solid #dee2e6'
-      }}>
-        <h1>Music Store</h1>
-        <p>Quality instruments for musicians of all levels</p>
+      <header className="premium-header">
+        <h1><span className="premium-accent">Harmony</span> Music</h1>
+        <p>Premium instruments for discerning musicians</p>
       </header>
 
       <ProductFilters 

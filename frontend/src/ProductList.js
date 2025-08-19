@@ -17,21 +17,27 @@ function ProductList({ products, onAddToCart }) {
 
   return (
     <div style={{
-      padding: '20px'
+      padding: '40px 20px',
+      maxWidth: '1400px',
+      margin: '0 auto'
     }}>
       <h2 style={{
         textAlign: 'center',
-        marginBottom: '20px',
-        color: '#333'
+        marginBottom: '50px',
+        fontSize: '2.5rem',
+        fontWeight: '300',
+        color: 'var(--primary-black)',
+        textTransform: 'uppercase',
+        letterSpacing: '2px'
       }}>
-        Our Products
+        Our <span style={{ color: 'var(--accent-orange)' }}>Collection</span>
       </h2>
       
       <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: '16px'
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+        gap: '30px',
+        justifyItems: 'center'
       }}>
         {products.map(product => (
           <Product 
