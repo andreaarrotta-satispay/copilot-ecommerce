@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCurrencySymbol } from './utils/currency';
 
 function Product({ product, onAddToCart }) {
   const handleAddToCart = () => {
@@ -91,7 +92,10 @@ function Product({ product, onAddToCart }) {
           color: 'var(--primary-black)',
           letterSpacing: '-1px'
         }}>
-          <span style={{ fontSize: '1.2rem', color: 'var(--medium-gray)' }}>$</span>{product.price}
+          <span style={{ fontSize: '1.2rem', color: 'var(--medium-gray)' }}>
+            {getCurrencySymbol(product.currency || 'USD')}
+          </span>
+          {product.price}
         </span>
         
         <div style={{ 

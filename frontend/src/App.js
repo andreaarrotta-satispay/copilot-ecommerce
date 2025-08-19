@@ -92,7 +92,7 @@ function App() {
   return (
     <div className="App">
       <header className="premium-header">
-        <h1><span className="premium-accent">Harmony</span> Music</h1>
+        <h1><span className="premium-accent">Premium</span> Music</h1>
         <p>Premium instruments for discerning musicians</p>
       </header>
 
