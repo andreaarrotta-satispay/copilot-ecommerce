@@ -70,19 +70,75 @@ app.post('/carts/:cartId/products', (req, res) => {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  // Check if product is in stock
-  if (!product.inStock) {
-    return res.status(400).json({ error: 'Product is out of stock' });
+  // Only check stock availability when adding items (positive quantity)
+  if (quantityNum > 0) {
+    if (!product.inStock || product.stockQuantity < quantityNum) {
+      return res.status(400).json({ 
+        error: !product.inStock ? 'Product is out of stock' : 'Insufficient stock quantity available',
+        availableStock: product.stockQuantity
+      });
+    }
   }
 
   // Find product in cart
   const cartItemIndex = cart.findIndex(item => item.productId === productIdNum);
+  
   if (cartItemIndex > -1) {
-    // Update quantity
-    cart[cartItemIndex].quantity += quantityNum;
+    const currentCartQuantity = cart[cartItemIndex].quantity;
+    const newTotalQuantity = currentCartQuantity + quantityNum;
+    
+    // Only check stock limits when increasing quantity (positive quantityNum)
+    if (quantityNum > 0) {
+      // Check if adding more quantity would exceed available stock
+      // We need to check against current stock + what's already in cart
+      const availableStock = product.stockQuantity + currentCartQuantity;
+      
+      if (newTotalQuantity > availableStock) {
+        return res.status(400).json({ 
+          error: 'Cannot add more items. Insufficient stock quantity available',
+          availableStock: availableStock - currentCartQuantity,
+          currentCartQuantity: currentCartQuantity
+        });
+      }
+    }
+    
+    // Check if final quantity would be valid (not negative)
+    if (newTotalQuantity < 0) {
+      return res.status(400).json({ 
+        error: 'Cannot reduce quantity below zero',
+        currentCartQuantity: currentCartQuantity
+      });
+    }
+    
+    // If final quantity is 0, remove the item from cart
+    if (newTotalQuantity === 0) {
+      cart.splice(cartItemIndex, 1);
+    } else {
+      // Update quantity in cart
+      cart[cartItemIndex].quantity = newTotalQuantity;
+    }
   } else {
-    // Add new product to cart
+    // Add new product to cart (only if quantity is positive)
+    if (quantityNum <= 0) {
+      return res.status(400).json({ 
+        error: 'Cannot add negative or zero quantity for new cart item'
+      });
+    }
     cart.push({ productId: productIdNum, quantity: quantityNum });
+  }
+
+  // Update product stock in memory
+  const productIndex = products.findIndex(p => p.id === productIdNum);
+  if (productIndex > -1) {
+    products[productIndex].stockQuantity -= quantityNum;
+    // Update inStock status based on quantity
+    if (products[productIndex].stockQuantity <= 0) {
+      products[productIndex].inStock = false;
+      products[productIndex].stockQuantity = 0;
+    } else {
+      products[productIndex].inStock = true;
+    }
+    console.log(`Updated stock for product ${productIdNum}: ${products[productIndex].stockQuantity} remaining`);
   }
 
   // Store updated cart in cookies
@@ -121,8 +177,22 @@ app.delete('/carts/:cartId/products/:productId', (req, res) => {
     return res.status(404).json({ error: 'Product not found in cart' });
   }
 
+  // Get the quantity being removed to restore stock
+  const removedQuantity = cart[cartItemIndex].quantity;
+  
   // Remove the item from cart
   cart.splice(cartItemIndex, 1);
+  
+  // Restore product stock in memory
+  const productIndex = products.findIndex(p => p.id === productIdNum);
+  if (productIndex > -1) {
+    products[productIndex].stockQuantity += removedQuantity;
+    // Update inStock status if quantity is now available
+    if (products[productIndex].stockQuantity > 0) {
+      products[productIndex].inStock = true;
+    }
+    console.log(`Restored stock for product ${productIdNum}: ${products[productIndex].stockQuantity} available`);
+  }
 
   // Store updated cart in cookies
   res.cookie('cart', JSON.stringify(cart), { httpOnly: true });
