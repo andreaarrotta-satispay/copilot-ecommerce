@@ -10,11 +10,12 @@ import './styles/App.css';
 
 function App() {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Only for initial load
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     category: 'all',
-    inStock: ''
+    inStock: '',
+    search: ''
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [notification, setNotification] = useState({
@@ -25,8 +26,28 @@ function App() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   useEffect(() => {
-    fetchProducts();
+    if (loading) {
+      // Initial load - show loading state
+      initialLoad();
+    } else {
+      // All subsequent changes - silent refresh
+      refreshProducts();
+    }
   }, [filters]);
+
+  const initialLoad = async () => {
+    try {
+      setLoading(true);
+      const products = await getProductsFromAPI();
+      setProducts(products);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load products. Please try again later.');
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const showNotification = (message, type = 'success') => {
     setNotification({
@@ -53,24 +74,15 @@ function App() {
     if (filters.inStock !== '') {
       params.append('inStock', filters.inStock);
     }
+    
+    if (filters.search !== '') {
+      params.append('search', filters.search);
+    }
 
     const response = await api.get(`/products?${params}`);
     return response.data;
   };
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const products = await getProductsFromAPI();
-      setProducts(products);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load products. Please try again later.');
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const refreshProducts = async () => {
     try {
@@ -117,7 +129,7 @@ function App() {
         <h2 className="error-title">Error</h2>
         <p>{error}</p>
         <button 
-          onClick={fetchProducts}
+          onClick={initialLoad}
           className="error-retry-button"
         >
           Retry

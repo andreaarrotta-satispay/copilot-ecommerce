@@ -32,10 +32,18 @@ function ProductFilters({ filters, onFilterChange }) {
     });
   };
 
+  const handleSearchChange = (e) => {
+    onFilterChange({
+      ...filters,
+      search: e.target.value
+    });
+  };
+
   const handleResetFilters = () => {
     onFilterChange({
       category: 'all',
-      inStock: ''
+      inStock: '',
+      search: ''
     });
   };
 
@@ -66,6 +74,44 @@ function ProductFilters({ filters, onFilterChange }) {
         flexWrap: 'wrap',
         alignItems: 'flex-end'
       }}>
+        <div>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '8px',
+            fontWeight: '500',
+            color: 'var(--medium-gray)',
+            fontSize: '0.9rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Search Products:
+          </label>
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={filters.search}
+            onChange={handleSearchChange}
+            style={{
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '2px solid var(--light-gray)',
+              fontSize: '16px',
+              background: 'var(--white)',
+              color: 'var(--primary-black)',
+              minWidth: '250px',
+              transition: 'all 0.3s ease',
+              outline: 'none'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = 'var(--accent-orange)';
+              e.target.style.boxShadow = '0 0 0 3px rgba(255,102,0,0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'var(--light-gray)';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+        </div>
         <div>
           <label style={{ 
             display: 'block', 

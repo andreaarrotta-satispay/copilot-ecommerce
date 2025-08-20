@@ -27,7 +27,7 @@ app.use(express.json());
 app.get('/products', (req, res) => {
     let filteredProducts = [...products];
     
-    const { category, inStock } = req.query;
+    const { category, inStock, search } = req.query;
     
     if (category && category !== 'all') {
         filteredProducts = filteredProducts.filter(product => 
@@ -39,6 +39,13 @@ app.get('/products', (req, res) => {
         const stockFilter = inStock === 'true';
         filteredProducts = filteredProducts.filter(product => 
             product.inStock === stockFilter
+        );
+    }
+    
+    if (search && search.trim() !== '') {
+        const searchTerm = search.toLowerCase().trim();
+        filteredProducts = filteredProducts.filter(product => 
+            product.name.toLowerCase().includes(searchTerm)
         );
     }
     
