@@ -5,7 +5,6 @@ import ProductGrid from './ProductGrid';
 import ProductFilters from './ProductFilters';
 import Cart from './Cart';
 import Notification from './Notification';
-import './App.css';
 import './styles/App.css';
 
 function App() {
