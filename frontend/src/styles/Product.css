@@ -20,14 +20,14 @@
   position: absolute;
   top: 15px;
   right: 15px;
-  background: linear-gradient(135deg, var(--accent-orange) 0%, #e55a00 100%);
+  background: linear-gradient(135deg, var(--primary-black) 0%, var(--secondary-black) 100%);
   color: var(--white);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   text-align: center;
   line-height: 1.2;
   z-index: 1;
@@ -71,15 +71,16 @@
 }
 
 .product-price {
-  font-size: 2rem;
-  font-weight: 300;
+  font-size: 1.8rem;
+  font-weight: 600;
   color: var(--primary-black);
   letter-spacing: -1px;
 }
 
 .product-currency {
-  font-size: 1.2rem;
-  color: var(--medium-gray);
+  color: var(--accent-orange);
+  font-size: 1.8rem;
+  font-weight: 600;
 }
 
 .product-rating {
