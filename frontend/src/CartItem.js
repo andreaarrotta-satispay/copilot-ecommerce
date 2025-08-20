@@ -1,12 +1,23 @@
 import React from 'react';
 import { getCurrencySymbol } from './utils/currency';
 
-function CartItem({ item, onUpdateQuantity, onRemove }) {
+function CartItem({ item, onUpdateQuantity, onRemove, showNotification }) {
   const handleQuantityChange = (newQuantity) => {
+    const currentQuantity = item.quantity;
+    
     if (newQuantity < 1) {
       onRemove(item.productId);
     } else if (onUpdateQuantity) {
       onUpdateQuantity(item.productId, newQuantity);
+      
+      // Show notification for quantity change
+      if (showNotification) {
+        if (newQuantity > currentQuantity) {
+          showNotification(`${item.name} quantity increased to ${newQuantity}`, 'success');
+        } else if (newQuantity < currentQuantity) {
+          showNotification(`${item.name} quantity decreased to ${newQuantity}`, 'success');
+        }
+      }
     }
   };
 
@@ -139,7 +150,7 @@ function CartItem({ item, onUpdateQuantity, onRemove }) {
         }}
         title="Remove item"
       >
-        ×
+        ï¿½
       </button>
     </div>
   );

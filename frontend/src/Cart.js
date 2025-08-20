@@ -48,6 +48,9 @@ function Cart({ isVisible, onClose, showNotification }) {
     } catch (err) {
       setError('Failed to update cart. Please try again.');
       console.error('Error updating cart:', err);
+      if (showNotification) {
+        showNotification('Failed to update quantity. Please try again.', 'error');
+      }
     }
   };
 
@@ -166,6 +169,7 @@ function Cart({ isVisible, onClose, showNotification }) {
                 item={item}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeItem}
+                showNotification={showNotification}
               />
             ))}
           </div>
