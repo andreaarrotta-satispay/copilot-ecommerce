@@ -1,6 +1,5 @@
-const products = require('./product-test-data');
-
-function getDetailedCart(cart) {
+// Products will be passed as parameter to avoid multiple file reads
+function getDetailedCart(cart, products = []) {
   let total = 0;
   const detailedCart = cart.map(item => {
     const itemProduct = products.find(p => p.id === item.productId);

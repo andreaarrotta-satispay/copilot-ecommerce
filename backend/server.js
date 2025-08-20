@@ -2,7 +2,17 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const app = express();
-const products = require('./product-test-data');
+
+// Load products into memory on startup
+let products = [];
+try {
+  products = require('./product-test-data');
+  console.log(`Loaded ${products.length} products into memory`);
+} catch (error) {
+  console.error('Failed to load product data:', error);
+  products = [];
+}
+
 const { getDetailedCart } = require('./cart-helper');
 
 app.use(cors({
@@ -79,7 +89,7 @@ app.post('/carts/:cartId/products', (req, res) => {
   res.cookie('cart', JSON.stringify(cart), { httpOnly: true });
 
   // Return updated cart with totals
-  res.json(getDetailedCart(cart));
+  res.json(getDetailedCart(cart, products));
 });
 
 app.get('/carts/:cartId', (req, res) => {
@@ -90,7 +100,7 @@ app.get('/carts/:cartId', (req, res) => {
   let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
   
   // Return cart with totals
-  res.json(getDetailedCart(cart));
+  res.json(getDetailedCart(cart, products));
 });
 
 app.delete('/carts/:cartId/products/:productId', (req, res) => {
@@ -118,7 +128,7 @@ app.delete('/carts/:cartId/products/:productId', (req, res) => {
   res.cookie('cart', JSON.stringify(cart), { httpOnly: true });
 
   // Return updated cart with totals
-  res.json(getDetailedCart(cart));
+  res.json(getDetailedCart(cart, products));
 });
 
 app.listen(3000, () => {
