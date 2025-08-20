@@ -45,7 +45,7 @@ function App() {
 
   const handleAddToCart = async (product) => {
     try {
-      await axios.post('http://localhost:3000/cart', {
+      await axios.post('http://localhost:3000/carts/session/products', {
         productId: product.id,
         quantity: 1
       }, {

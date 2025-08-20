@@ -40,14 +40,16 @@ app.get('/categories', (req, res) => {
     res.json(categories.sort());
 });
 
-app.post('/cart', (req, res) => {
+app.post('/carts/:cartId/products', (req, res) => {
+  const { cartId } = req.params;
   const { productId, quantity } = req.body;
   
   if (!productId || !quantity) {
     return res.status(400).json({ error: 'Product ID and quantity are required' });
   }
 
-  // Parse cart from cookies or initialize empty cart
+  // For session-based carts, we'll use the cookie regardless of cartId
+  // In a real app, you might validate cartId against user session
   let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
   const productIdNum = Number(productId);
   const quantityNum = Number(quantity);
@@ -80,26 +82,31 @@ app.post('/cart', (req, res) => {
   res.json(getDetailedCart(cart));
 });
 
-app.get('/cart', (req, res) => {
-  // Parse cart from cookies or return empty cart
+app.get('/carts/:cartId', (req, res) => {
+  const { cartId } = req.params;
+  
+  // For session-based carts, we'll use the cookie regardless of cartId
+  // In a real app, you might validate cartId against user session
   let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
   
   // Return cart with totals
   res.json(getDetailedCart(cart));
 });
 
-app.delete('/cart/:productId', (req, res) => {
-  const productId = Number(req.params.productId);
+app.delete('/carts/:cartId/products/:productId', (req, res) => {
+  const { cartId, productId } = req.params;
+  const productIdNum = Number(productId);
   
-  if (!productId) {
+  if (!productIdNum) {
     return res.status(400).json({ error: 'Product ID is required' });
   }
 
-  // Parse cart from cookies
+  // For session-based carts, we'll use the cookie regardless of cartId
+  // In a real app, you might validate cartId against user session
   let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
   
   // Find and remove the product from cart
-  const cartItemIndex = cart.findIndex(item => item.productId === productId);
+  const cartItemIndex = cart.findIndex(item => item.productId === productIdNum);
   if (cartItemIndex === -1) {
     return res.status(404).json({ error: 'Product not found in cart' });
   }

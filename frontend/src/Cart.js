@@ -20,7 +20,7 @@ function Cart({ isVisible, onClose }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:3000/cart', {
+      const response = await axios.get('http://localhost:3000/carts/session', {
         withCredentials: true
       });
       setCart(response.data.cart);
@@ -36,7 +36,7 @@ function Cart({ isVisible, onClose }) {
 
   const updateQuantity = async (productId, newQuantity) => {
     try {
-      const response = await axios.post('http://localhost:3000/cart', {
+      const response = await axios.post('http://localhost:3000/carts/session/products', {
         productId,
         quantity: newQuantity - cart.find(item => item.productId === productId)?.quantity || 0
       }, {
@@ -53,7 +53,7 @@ function Cart({ isVisible, onClose }) {
 
   const removeItem = async (productId) => {
     try {
-      const response = await axios.delete(`http://localhost:3000/cart/${productId}`, {
+      const response = await axios.delete(`http://localhost:3000/carts/session/products/${productId}`, {
         withCredentials: true
       });
       setCart(response.data.cart);
