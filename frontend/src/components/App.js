@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import api from './api/axios';
+import api from '../api/axios';
 import ProductList from './ProductList';
 import ProductGrid from './ProductGrid';
 import ProductFilters from './ProductFilters';
 import Cart from './Cart';
 import Notification from './Notification';
-import './styles/App.css';
+import '../styles/App.css';
 
 function App() {
   const [products, setProducts] = useState([]);

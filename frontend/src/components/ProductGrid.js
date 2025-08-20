@@ -1,6 +1,6 @@
 import React from 'react';
 import Product from './Product';
-import './styles/ProductGrid.css';
+import '../styles/ProductGrid.css';
 
 function ProductGrid({ products, onAddToCart }) {
   if (!products || products.length === 0) {

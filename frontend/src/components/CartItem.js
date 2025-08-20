@@ -1,6 +1,6 @@
 import React from 'react';
-import { getCurrencySymbol } from './utils/currency';
-import './styles/CartItem.css';
+import { getCurrencySymbol } from '../utils/currency';
+import '../styles/CartItem.css';
 
 function CartItem({ item, onUpdateQuantity, onRemove, showNotification }) {
   const handleQuantityChange = (newQuantity) => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { getCurrencySymbol } from './utils/currency';
-import './styles/ProductList.css';
+import { getCurrencySymbol } from '../utils/currency';
+import '../styles/ProductList.css';
 
 function ProductList({ products, onAddToCart }) {
   if (!products || products.length === 0) {

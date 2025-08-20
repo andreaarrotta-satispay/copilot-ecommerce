@@ -1,6 +1,6 @@
 import React from 'react';
-import { getCurrencySymbol } from './utils/currency';
-import './styles/Product.css';
+import { getCurrencySymbol } from '../utils/currency';
+import '../styles/Product.css';
 
 function Product({ product, onAddToCart }) {
   const handleAddToCart = () => {

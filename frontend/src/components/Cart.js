@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import api from './api/axios';
+import api from '../api/axios';
 import CartItem from './CartItem';
-import { getCurrencySymbol } from './utils/currency';
-import './styles/Cart.css';
+import { getCurrencySymbol } from '../utils/currency';
+import '../styles/Cart.css';
 
 function Cart({ isVisible, onClose, showNotification, onProductUpdate }) {
   const [cart, setCart] = useState([]);
