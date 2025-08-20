@@ -4,7 +4,7 @@ import CartItem from './CartItem';
 import { getCurrencySymbol } from './utils/currency';
 import './styles/Cart.css';
 
-function Cart({ isVisible, onClose, showNotification }) {
+function Cart({ isVisible, onClose, showNotification, onProductUpdate }) {
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [itemCount, setItemCount] = useState(0);
@@ -42,11 +42,20 @@ function Cart({ isVisible, onClose, showNotification }) {
       setCart(response.data.cart);
       setTotal(response.data.total);
       setItemCount(response.data.itemCount);
+      // Update product list to reflect stock changes
+      if (onProductUpdate) {
+        onProductUpdate();
+      }
     } catch (err) {
       setError('Failed to update cart. Please try again.');
       console.error('Error updating cart:', err);
       if (showNotification) {
-        showNotification('Failed to update quantity. Please try again.', 'error');
+        // Check if it's a stock-related error
+        if (err.response && err.response.data && err.response.data.error) {
+          showNotification(err.response.data.error, 'error');
+        } else {
+          showNotification('Failed to update quantity. Please try again.', 'error');
+        }
       }
     }
   };
@@ -61,6 +70,11 @@ function Cart({ isVisible, onClose, showNotification }) {
       setCart(response.data.cart);
       setTotal(response.data.total);
       setItemCount(response.data.itemCount);
+      
+      // Update product list to reflect stock changes
+      if (onProductUpdate) {
+        onProductUpdate();
+      }
       
       if (showNotification) {
         showNotification(`${itemName} removed from cart`, 'success');

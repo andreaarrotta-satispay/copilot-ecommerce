@@ -42,27 +42,43 @@ function App() {
     }));
   };
 
+  const getProductsFromAPI = async () => {
+    const params = new URLSearchParams();
+    
+    if (filters.category !== 'all') {
+      params.append('category', filters.category);
+    }
+    
+    if (filters.inStock !== '') {
+      params.append('inStock', filters.inStock);
+    }
+
+    const response = await api.get(`/products?${params}`);
+    return response.data;
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      
-      if (filters.category !== 'all') {
-        params.append('category', filters.category);
-      }
-      
-      if (filters.inStock !== '') {
-        params.append('inStock', filters.inStock);
-      }
-
-      const response = await api.get(`/products?${params}`);
-      setProducts(response.data);
+      const products = await getProductsFromAPI();
+      setProducts(products);
       setError(null);
     } catch (err) {
       setError('Failed to load products. Please try again later.');
       console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshProducts = async () => {
+    try {
+      // Silent refresh without loading state to avoid scroll jump
+      const products = await getProductsFromAPI();
+      setProducts(products);
+    } catch (err) {
+      console.error('Error refreshing products:', err);
+      // Don't show error notification for silent refresh
     }
   };
 
@@ -73,9 +89,16 @@ function App() {
         quantity: 1
       });
       showNotification(`${product.name} added to cart!`, 'success');
+      // Silently refresh products to update stock status
+      await refreshProducts();
     } catch (err) {
       console.error('Failed to add to cart:', err);
-      showNotification('Failed to add item to cart. Please try again.', 'error');
+      // Check if it's a stock-related error
+      if (err.response && err.response.data && err.response.data.error) {
+        showNotification(err.response.data.error, 'error');
+      } else {
+        showNotification('Failed to add item to cart. Please try again.', 'error');
+      }
     }
   };
 
@@ -232,6 +255,7 @@ function App() {
         isVisible={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         showNotification={showNotification}
+        onProductUpdate={refreshProducts}
       />
 
       <Notification
