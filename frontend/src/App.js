@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api/axios';
 import ProductList from './ProductList';
 import ProductFilters from './ProductFilters';
 import Cart from './Cart';
@@ -53,7 +53,7 @@ function App() {
         params.append('inStock', filters.inStock);
       }
 
-      const response = await axios.get(`http://localhost:3000/products?${params}`);
+      const response = await api.get(`/products?${params}`);
       setProducts(response.data);
       setError(null);
     } catch (err) {
@@ -66,11 +66,9 @@ function App() {
 
   const handleAddToCart = async (product) => {
     try {
-      await axios.post('http://localhost:3000/carts/session/products', {
+      await api.post('/carts/session/products', {
         productId: product.id,
         quantity: 1
-      }, {
-        withCredentials: true
       });
       showNotification(`${product.name} added to cart!`, 'success');
     } catch (err) {

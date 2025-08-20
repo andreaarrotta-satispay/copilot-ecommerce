@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api/axios';
 import CartItem from './CartItem';
 import { getCurrencySymbol } from './utils/currency';
 
@@ -20,9 +20,7 @@ function Cart({ isVisible, onClose, showNotification }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:3000/carts/session', {
-        withCredentials: true
-      });
+      const response = await api.get('/carts/session');
       setCart(response.data.cart);
       setTotal(response.data.total);
       setItemCount(response.data.itemCount);
@@ -36,11 +34,9 @@ function Cart({ isVisible, onClose, showNotification }) {
 
   const updateQuantity = async (productId, newQuantity) => {
     try {
-      const response = await axios.post('http://localhost:3000/carts/session/products', {
+      const response = await api.post('/carts/session/products', {
         productId,
         quantity: newQuantity - cart.find(item => item.productId === productId)?.quantity || 0
-      }, {
-        withCredentials: true
       });
       setCart(response.data.cart);
       setTotal(response.data.total);
@@ -60,9 +56,7 @@ function Cart({ isVisible, onClose, showNotification }) {
       const itemToRemove = cart.find(item => item.productId === productId);
       const itemName = itemToRemove ? itemToRemove.name : 'Item';
       
-      const response = await axios.delete(`http://localhost:3000/carts/session/products/${productId}`, {
-        withCredentials: true
-      });
+      const response = await api.delete(`/carts/session/products/${productId}`);
       setCart(response.data.cart);
       setTotal(response.data.total);
       setItemCount(response.data.itemCount);
@@ -82,21 +76,42 @@ function Cart({ isVisible, onClose, showNotification }) {
   if (!isVisible) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      right: 0,
-      width: '400px',
-      height: '100vh',
-      background: 'var(--white)',
-      boxShadow: '-4px 0 20px rgba(0,0,0,0.1)',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
-      transition: 'transform 0.3s ease'
-    }}>
-      <div style={{
+    <>
+      {/* Backdrop overlay */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 999,
+          opacity: isVisible ? 1 : 0,
+          transition: 'opacity 0.3s ease'
+        }}
+        onClick={onClose}
+      />
+      
+      {/* Cart panel */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          width: '400px',
+          height: '100vh',
+          background: 'var(--white)',
+          boxShadow: '-4px 0 20px rgba(0,0,0,0.1)',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s ease'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{
         padding: '20px',
         borderBottom: '1px solid rgba(0,0,0,0.1)',
         display: 'flex',
@@ -236,7 +251,8 @@ function Cart({ isVisible, onClose, showNotification }) {
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
