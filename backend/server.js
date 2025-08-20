@@ -24,17 +24,32 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 
+
+/**
+ * GET /products - Retrieve filtered product catalog
+ * 
+ * Query Parameters:
+ * - category (string): Filter by product category (case-insensitive). Use 'all' to show all categories
+ * - inStock (boolean): Filter by availability status ('true' for in stock, 'false' for out of stock)
+ * - search (string): Filter by partial product name match (case-insensitive)
+ * 
+ * Returns: Array of product objects matching the filter criteria
+ * 
+ * Example: GET /products?category=guitars&inStock=true&search=electric
+ */
 app.get('/products', (req, res) => {
     let filteredProducts = [...products];
     
     const { category, inStock, search } = req.query;
     
+    // Filter by category (case-insensitive comparison)
     if (category && category !== 'all') {
         filteredProducts = filteredProducts.filter(product => 
             product.category.toLowerCase() === category.toLowerCase()
         );
     }
     
+    // Filter by stock availability
     if (inStock !== undefined) {
         const stockFilter = inStock === 'true';
         filteredProducts = filteredProducts.filter(product => 
@@ -42,6 +57,7 @@ app.get('/products', (req, res) => {
         );
     }
     
+    // Filter by product name search (partial match, case-insensitive)
     if (search && search.trim() !== '') {
         const searchTerm = search.toLowerCase().trim();
         filteredProducts = filteredProducts.filter(product => 
@@ -52,11 +68,43 @@ app.get('/products', (req, res) => {
     res.json(filteredProducts);
 });
 
+/**
+ * GET /categories - Retrieve available product categories
+ * 
+ * Returns: Array of unique category names (sorted alphabetically)
+ * 
+ * Example response: ["Guitars", "Keyboards", "Violins"]
+ */
 app.get('/categories', (req, res) => {
     const categories = [...new Set(products.map(product => product.category))];
     res.json(categories.sort());
 });
 
+/**
+ * POST /carts/:cartId/products - Add or update product quantity in cart
+ * 
+ * Path Parameters:
+ * - cartId (string): Cart identifier (currently using session for all carts)
+ * 
+ * Request Body:
+ * - productId (number): ID of the product to add/update
+ * - quantity (number): Quantity to add (positive) or remove (negative)
+ * 
+ * Returns: Cart object with updated items, totals, and item count
+ * 
+ * Behavior:
+ * - Positive quantity: Adds items (validates stock availability)
+ * - Negative quantity: Removes items (bypasses stock validation)
+ * - If final quantity becomes 0, removes item from cart
+ * - Updates product stock in memory
+ * - Stores cart in HTTP-only cookies
+ * 
+ * Error Responses:
+ * - 400: Missing required fields, invalid quantity, or insufficient stock
+ * - 404: Product not found
+ * 
+ * Example: POST /carts/session/products { "productId": 1, "quantity": 2 }
+ */
 app.post('/carts/:cartId/products', (req, res) => {
   const { cartId } = req.params;
   const { productId, quantity } = req.body;
@@ -155,6 +203,21 @@ app.post('/carts/:cartId/products', (req, res) => {
   res.json(getDetailedCart(cart, products));
 });
 
+/**
+ * GET /carts/:cartId - Retrieve current cart contents
+ * 
+ * Path Parameters:
+ * - cartId (string): Cart identifier (currently using session for all carts)
+ * 
+ * Returns: Cart object containing items array, total amount, and item count
+ * 
+ * Response Structure:
+ * - cart: Array of cart items with product details
+ * - total: Sum of all item subtotals (rounded to 2 decimal places)
+ * - itemCount: Total number of items in cart
+ * 
+ * Example: GET /carts/session
+ */
 app.get('/carts/:cartId', (req, res) => {
   const { cartId } = req.params;
   
@@ -166,6 +229,27 @@ app.get('/carts/:cartId', (req, res) => {
   res.json(getDetailedCart(cart, products));
 });
 
+/**
+ * DELETE /carts/:cartId/products/:productId - Remove product completely from cart
+ * 
+ * Path Parameters:
+ * - cartId (string): Cart identifier (currently using session for all carts)
+ * - productId (number): ID of the product to remove from cart
+ * 
+ * Returns: Cart object with updated items, totals, and item count
+ * 
+ * Behavior:
+ * - Removes entire product entry from cart (all quantities)
+ * - Restores full quantity back to product stock in memory
+ * - Updates product inStock status if quantity becomes available
+ * - Stores updated cart in HTTP-only cookies
+ * 
+ * Error Responses:
+ * - 400: Invalid or missing product ID
+ * - 404: Product not found in cart
+ * 
+ * Example: DELETE /carts/session/products/1
+ */
 app.delete('/carts/:cartId/products/:productId', (req, res) => {
   const { cartId, productId } = req.params;
   const productIdNum = Number(productId);
