@@ -32,26 +32,31 @@ function Product({ product, onAddToCart }) {
       
       <div style={{
         position: 'absolute',
-        top: '20px',
-        right: '20px',
+        top: '15px',
+        right: '15px',
         background: 'linear-gradient(135deg, var(--accent-orange) 0%, #e55a00 100%)',
         color: 'var(--white)',
-        padding: '6px 12px',
-        borderRadius: '20px',
-        fontSize: '11px',
+        padding: '4px 10px',
+        borderRadius: '12px',
+        fontSize: '10px',
         fontWeight: '600',
         textTransform: 'uppercase',
-        letterSpacing: '0.5px'
+        letterSpacing: '0.3px',
+        textAlign: 'center',
+        lineHeight: '1.2',
+        zIndex: 1,
+        whiteSpace: 'nowrap'
       }}>
         {product.category}
       </div>
 
       <h3 style={{ 
-        margin: '0 0 12px 0', 
+        margin: '35px 0 12px 0', 
         fontSize: '1.4rem',
         fontWeight: '400',
         color: 'var(--primary-black)',
-        lineHeight: '1.3'
+        lineHeight: '1.3',
+        paddingRight: '80px'
       }}>
         {product.name}
       </h3>
