@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from './api/axios';
 import ProductList from './ProductList';
+import ProductGrid from './ProductGrid';
 import ProductFilters from './ProductFilters';
 import Cart from './Cart';
 import Notification from './Notification';
@@ -20,6 +21,7 @@ function App() {
     type: 'success',
     isVisible: false
   });
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   useEffect(() => {
     fetchProducts();
@@ -126,38 +128,87 @@ function App() {
         <h1><span className="premium-accent">Premium</span> Music</h1>
         <p>Premium instruments for discerning musicians</p>
         
-        <button
-          onClick={() => setIsCartOpen(true)}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'linear-gradient(135deg, var(--accent-orange) 0%, #e55a00 100%)',
-            color: 'var(--white)',
-            border: 'none',
-            borderRadius: '50%',
-            width: '50px',
-            height: '50px',
-            cursor: 'pointer',
-            fontSize: '18px',
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          display: 'flex',
+          gap: '10px',
+          alignItems: 'center'
+        }}>
+          <div style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(255, 102, 0, 0.3)',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.transform = 'scale(1.1)';
-            e.target.style.boxShadow = '0 6px 20px rgba(255, 102, 0, 0.4)';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 4px 12px rgba(255, 102, 0, 0.3)';
-          }}
-          title="Your Cart"
-        >
-          🛒
-        </button>
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '25px',
+            padding: '4px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                background: viewMode === 'grid' ? 'var(--accent-orange)' : 'transparent',
+                color: 'var(--white)',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.3s ease'
+              }}
+              title="Grid View"
+            >
+              ⊞
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              style={{
+                background: viewMode === 'list' ? 'var(--accent-orange)' : 'transparent',
+                color: 'var(--white)',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.3s ease'
+              }}
+              title="List View"
+            >
+              ☰
+            </button>
+          </div>
+          
+          <button
+            onClick={() => setIsCartOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, var(--accent-orange) 0%, #e55a00 100%)',
+              color: 'var(--white)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '50px',
+              height: '50px',
+              cursor: 'pointer',
+              fontSize: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(255, 102, 0, 0.3)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'scale(1.1)';
+              e.target.style.boxShadow = '0 6px 20px rgba(255, 102, 0, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 4px 12px rgba(255, 102, 0, 0.3)';
+            }}
+            title="Your Cart"
+          >
+            🛒
+          </button>
+        </div>
       </header>
 
       <ProductFilters 
@@ -165,10 +216,17 @@ function App() {
         onFilterChange={setFilters}
       />
 
-      <ProductList 
-        products={products}
-        onAddToCart={handleAddToCart}
-      />
+      {viewMode === 'grid' ? (
+        <ProductGrid 
+          products={products}
+          onAddToCart={handleAddToCart}
+        />
+      ) : (
+        <ProductList 
+          products={products}
+          onAddToCart={handleAddToCart}
+        />
+      )}
 
       <Cart
         isVisible={isCartOpen}
