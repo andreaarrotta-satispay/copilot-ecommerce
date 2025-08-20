@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductList from './ProductList';
 import ProductFilters from './ProductFilters';
+import Cart from './Cart';
 import './App.css';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
     category: 'all',
     inStock: ''
   });
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -41,9 +43,20 @@ function App() {
     }
   };
 
-  const handleAddToCart = (product) => {
-    console.log('Adding to cart:', product);
-    // TODO: Implement add to cart functionality
+  const handleAddToCart = async (product) => {
+    try {
+      await axios.post('http://localhost:3000/cart', {
+        productId: product.id,
+        quantity: 1
+      }, {
+        withCredentials: true
+      });
+      // Optionally show a success message or update cart count
+      console.log('Added to cart:', product.name);
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+      // Optionally show an error message
+    }
   };
 
   if (loading) {
@@ -91,9 +104,42 @@ function App() {
 
   return (
     <div className="App">
-      <header className="premium-header">
+      <header className="premium-header" style={{ position: 'relative' }}>
         <h1><span className="premium-accent">Premium</span> Music</h1>
         <p>Premium instruments for discerning musicians</p>
+        
+        <button
+          onClick={() => setIsCartOpen(true)}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'linear-gradient(135deg, var(--accent-orange) 0%, #e55a00 100%)',
+            color: 'var(--white)',
+            border: 'none',
+            borderRadius: '50%',
+            width: '50px',
+            height: '50px',
+            cursor: 'pointer',
+            fontSize: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(255, 102, 0, 0.3)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'scale(1.1)';
+            e.target.style.boxShadow = '0 6px 20px rgba(255, 102, 0, 0.4)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 4px 12px rgba(255, 102, 0, 0.3)';
+          }}
+          title="Your Cart"
+        >
+          🛒
+        </button>
       </header>
 
       <ProductFilters 
@@ -104,6 +150,11 @@ function App() {
       <ProductList 
         products={products}
         onAddToCart={handleAddToCart}
+      />
+
+      <Cart
+        isVisible={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
       />
     </div>
   );
