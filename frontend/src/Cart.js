@@ -3,7 +3,7 @@ import axios from 'axios';
 import CartItem from './CartItem';
 import { getCurrencySymbol } from './utils/currency';
 
-function Cart({ isVisible, onClose }) {
+function Cart({ isVisible, onClose, showNotification }) {
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [itemCount, setItemCount] = useState(0);
@@ -53,15 +53,26 @@ function Cart({ isVisible, onClose }) {
 
   const removeItem = async (productId) => {
     try {
+      // Get the item name before removing it
+      const itemToRemove = cart.find(item => item.productId === productId);
+      const itemName = itemToRemove ? itemToRemove.name : 'Item';
+      
       const response = await axios.delete(`http://localhost:3000/carts/session/products/${productId}`, {
         withCredentials: true
       });
       setCart(response.data.cart);
       setTotal(response.data.total);
       setItemCount(response.data.itemCount);
+      
+      if (showNotification) {
+        showNotification(`${itemName} removed from cart`, 'success');
+      }
     } catch (err) {
       setError('Failed to remove item. Please try again.');
       console.error('Error removing item:', err);
+      if (showNotification) {
+        showNotification('Failed to remove item. Please try again.', 'error');
+      }
     }
   };
 

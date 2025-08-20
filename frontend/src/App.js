@@ -3,6 +3,7 @@ import axios from 'axios';
 import ProductList from './ProductList';
 import ProductFilters from './ProductFilters';
 import Cart from './Cart';
+import Notification from './Notification';
 import './App.css';
 
 function App() {
@@ -14,10 +15,30 @@ function App() {
     inStock: ''
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [notification, setNotification] = useState({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
 
   useEffect(() => {
     fetchProducts();
   }, [filters]);
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({
+      message,
+      type,
+      isVisible: true
+    });
+  };
+
+  const hideNotification = () => {
+    setNotification(prev => ({
+      ...prev,
+      isVisible: false
+    }));
+  };
 
   const fetchProducts = async () => {
     try {
@@ -51,11 +72,10 @@ function App() {
       }, {
         withCredentials: true
       });
-      // Optionally show a success message or update cart count
-      console.log('Added to cart:', product.name);
+      showNotification(`${product.name} added to cart!`, 'success');
     } catch (err) {
       console.error('Failed to add to cart:', err);
-      // Optionally show an error message
+      showNotification('Failed to add item to cart. Please try again.', 'error');
     }
   };
 
@@ -155,6 +175,14 @@ function App() {
       <Cart
         isVisible={isCartOpen}
         onClose={() => setIsCartOpen(false)}
+        showNotification={showNotification}
+      />
+
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
       />
     </div>
   );
