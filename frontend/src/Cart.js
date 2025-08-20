@@ -116,13 +116,25 @@ function Cart({ isVisible, onClose, showNotification }) {
           style={{
             background: 'transparent',
             border: 'none',
-            fontSize: '24px',
+            fontSize: '20px',
             cursor: 'pointer',
             color: 'var(--medium-gray)',
-            padding: '4px'
+            padding: '8px',
+            borderRadius: '4px',
+            transition: 'all 0.2s ease',
+            fontWeight: 'bold'
           }}
+          onMouseOver={(e) => {
+            e.target.style.color = '#ef4444';
+            e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.color = 'var(--medium-gray)';
+            e.target.style.background = 'transparent';
+          }}
+          title="Close Cart"
         >
-          �
+          ✕
         </button>
       </div>
 
