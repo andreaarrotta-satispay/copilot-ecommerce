@@ -3,17 +3,39 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const app = express();
 
+const { getDetailedCart } = require('./cart-helper');
+const {
+  getCartFromCookies,
+  saveCartToCookies,
+  findCartItem,
+  addNewCartItem,
+  updateCartItemQuantity,
+  removeCartItem
+} = require('./cart-utilities');
+const {
+  findProduct,
+  validateStockAvailability,
+  validateCartStockUpdate,
+  updateProductStock
+} = require('./stock-manager');
+const {
+  validateRequiredFields,
+  validateProductId,
+  validateQuantity,
+  createErrorResponse,
+  sendErrorResponse
+} = require('./validation-utils');
+const { logServerEvent, logSimple, logStockChange } = require('./logger');
+
 // Load products into memory on startup
 let products = [];
 try {
   products = require('./product-test-data');
-  console.log(`Loaded ${products.length} products into memory`);
+  logServerEvent(`Loaded ${products.length} products into memory`, { productCount: products.length });
 } catch (error) {
-  console.error('Failed to load product data:', error);
+  logServerEvent('Failed to load product data', { error: error.message });
   products = [];
 }
-
-const { getDetailedCart } = require('./cart-helper');
 
 app.use(cors({
   origin: ['http://localhost:3001', 'http://localhost:3000'],
@@ -109,97 +131,88 @@ app.post('/carts/:cartId/products', (req, res) => {
   const { cartId } = req.params;
   const { productId, quantity } = req.body;
   
-  if (!productId || !quantity) {
-    return res.status(400).json({ error: 'Product ID and quantity are required' });
+  // Validate required fields
+  const fieldValidation = validateRequiredFields(req.body, ['productId', 'quantity']);
+  if (!fieldValidation.isValid) {
+    return sendErrorResponse(res, createErrorResponse(400, fieldValidation.error));
   }
 
-  // For session-based carts, we'll use the cookie regardless of cartId
-  // In a real app, you might validate cartId against user session
-  let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
-  const productIdNum = Number(productId);
-  const quantityNum = Number(quantity);
+  // Validate and parse product ID
+  const productIdValidation = validateProductId(productId);
+  if (!productIdValidation.isValid) {
+    return sendErrorResponse(res, createErrorResponse(400, productIdValidation.error));
+  }
+  const productIdNum = productIdValidation.productId;
+
+  // Validate and parse quantity
+  const quantityValidation = validateQuantity(quantity, true); // Allow zero for removals
+  if (!quantityValidation.isValid) {
+    return sendErrorResponse(res, createErrorResponse(400, quantityValidation.error));
+  }
+  const quantityNum = quantityValidation.quantity;
+
+  // Get cart from cookies
+  let cart = getCartFromCookies(req);
 
   // Find the product to validate it exists
-  const product = products.find(p => p.id === productIdNum);
+  const product = findProduct(products, productIdNum);
   if (!product) {
-    return res.status(404).json({ error: 'Product not found' });
+    return sendErrorResponse(res, createErrorResponse(404, 'Product not found'));
   }
 
-  // Only check stock availability when adding items (positive quantity)
-  if (quantityNum > 0) {
-    if (!product.inStock || product.stockQuantity < quantityNum) {
-      return res.status(400).json({ 
-        error: !product.inStock ? 'Product is out of stock' : 'Insufficient stock quantity available',
-        availableStock: product.stockQuantity
-      });
-    }
-  }
-
-  // Find product in cart
-  const cartItemIndex = cart.findIndex(item => item.productId === productIdNum);
+  // Find existing cart item
+  const existingItem = findCartItem(cart, productIdNum);
   
-  if (cartItemIndex > -1) {
-    const currentCartQuantity = cart[cartItemIndex].quantity;
-    const newTotalQuantity = currentCartQuantity + quantityNum;
+  if (existingItem) {
+    // Update existing item
+    const currentQuantity = existingItem.item.quantity;
+    const newTotalQuantity = currentQuantity + quantityNum;
     
-    // Only check stock limits when increasing quantity (positive quantityNum)
+    // Only validate stock when adding items (positive quantity)
     if (quantityNum > 0) {
-      // Check if adding more quantity would exceed available stock
-      // We need to check against current stock + what's already in cart
-      const availableStock = product.stockQuantity + currentCartQuantity;
-      
-      if (newTotalQuantity > availableStock) {
-        return res.status(400).json({ 
-          error: 'Cannot add more items. Insufficient stock quantity available',
-          availableStock: availableStock - currentCartQuantity,
-          currentCartQuantity: currentCartQuantity
-        });
+      const stockValidation = validateCartStockUpdate(product, currentQuantity, quantityNum);
+      if (!stockValidation.isValid) {
+        return sendErrorResponse(res, createErrorResponse(400, stockValidation.error, {
+          availableStock: stockValidation.availableStock,
+          currentCartQuantity: stockValidation.currentCartQuantity
+        }));
       }
     }
     
-    // Check if final quantity would be valid (not negative)
+    // Validate final quantity isn't negative
     if (newTotalQuantity < 0) {
-      return res.status(400).json({ 
-        error: 'Cannot reduce quantity below zero',
-        currentCartQuantity: currentCartQuantity
-      });
+      return sendErrorResponse(res, createErrorResponse(400, 'Cannot reduce quantity below zero', {
+        currentCartQuantity: currentQuantity
+      }));
     }
     
-    // If final quantity is 0, remove the item from cart
-    if (newTotalQuantity === 0) {
-      cart.splice(cartItemIndex, 1);
-    } else {
-      // Update quantity in cart
-      cart[cartItemIndex].quantity = newTotalQuantity;
-    }
+    // Update cart item quantity (or remove if becomes 0)
+    updateCartItemQuantity(cart, existingItem.index, newTotalQuantity);
   } else {
-    // Add new product to cart (only if quantity is positive)
+    // Add new item to cart
     if (quantityNum <= 0) {
-      return res.status(400).json({ 
-        error: 'Cannot add negative or zero quantity for new cart item'
-      });
+      return sendErrorResponse(res, createErrorResponse(400, 'Cannot add negative or zero quantity for new cart item'));
     }
-    cart.push({ productId: productIdNum, quantity: quantityNum });
+    
+    // Validate stock for new item
+    const stockValidation = validateStockAvailability(product, quantityNum);
+    if (!stockValidation.isValid) {
+      return sendErrorResponse(res, createErrorResponse(400, stockValidation.error, {
+        availableStock: stockValidation.availableStock
+      }));
+    }
+    
+    addNewCartItem(cart, productIdNum, quantityNum);
   }
 
   // Update product stock in memory
-  const productIndex = products.findIndex(p => p.id === productIdNum);
-  if (productIndex > -1) {
-    products[productIndex].stockQuantity -= quantityNum;
-    // Update inStock status based on quantity
-    if (products[productIndex].stockQuantity <= 0) {
-      products[productIndex].inStock = false;
-      products[productIndex].stockQuantity = 0;
-    } else {
-      products[productIndex].inStock = true;
-    }
-    console.log(`Updated stock for product ${productIdNum}: ${products[productIndex].stockQuantity} remaining`);
+  const stockUpdate = updateProductStock(products, productIdNum, quantityNum);
+  if (stockUpdate.success) {
+    logStockChange(productIdNum, quantityNum, stockUpdate.newStockQuantity, 'cart_update');
   }
 
-  // Store updated cart in cookies
-  res.cookie('cart', JSON.stringify(cart), { httpOnly: true });
-
-  // Return updated cart with totals
+  // Save cart to cookies and return response
+  saveCartToCookies(res, cart);
   res.json(getDetailedCart(cart, products));
 });
 
@@ -221,9 +234,8 @@ app.post('/carts/:cartId/products', (req, res) => {
 app.get('/carts/:cartId', (req, res) => {
   const { cartId } = req.params;
   
-  // For session-based carts, we'll use the cookie regardless of cartId
-  // In a real app, you might validate cartId against user session
-  let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
+  // Get cart from cookies
+  const cart = getCartFromCookies(req);
   
   // Return cart with totals
   res.json(getDetailedCart(cart, products));
@@ -252,43 +264,34 @@ app.get('/carts/:cartId', (req, res) => {
  */
 app.delete('/carts/:cartId/products/:productId', (req, res) => {
   const { cartId, productId } = req.params;
-  const productIdNum = Number(productId);
   
-  if (!productIdNum) {
-    return res.status(400).json({ error: 'Product ID is required' });
+  // Validate product ID
+  const productIdValidation = validateProductId(productId);
+  if (!productIdValidation.isValid) {
+    return sendErrorResponse(res, createErrorResponse(400, productIdValidation.error));
   }
+  const productIdNum = productIdValidation.productId;
 
-  // For session-based carts, we'll use the cookie regardless of cartId
-  // In a real app, you might validate cartId against user session
-  let cart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
+  // Get cart from cookies
+  let cart = getCartFromCookies(req);
   
-  // Find and remove the product from cart
-  const cartItemIndex = cart.findIndex(item => item.productId === productIdNum);
-  if (cartItemIndex === -1) {
-    return res.status(404).json({ error: 'Product not found in cart' });
+  // Find cart item
+  const existingItem = findCartItem(cart, productIdNum);
+  if (!existingItem) {
+    return sendErrorResponse(res, createErrorResponse(404, 'Product not found in cart'));
   }
 
   // Get the quantity being removed to restore stock
-  const removedQuantity = cart[cartItemIndex].quantity;
+  const removedQuantity = removeCartItem(cart, existingItem.index);
   
-  // Remove the item from cart
-  cart.splice(cartItemIndex, 1);
-  
-  // Restore product stock in memory
-  const productIndex = products.findIndex(p => p.id === productIdNum);
-  if (productIndex > -1) {
-    products[productIndex].stockQuantity += removedQuantity;
-    // Update inStock status if quantity is now available
-    if (products[productIndex].stockQuantity > 0) {
-      products[productIndex].inStock = true;
-    }
-    console.log(`Restored stock for product ${productIdNum}: ${products[productIndex].stockQuantity} available`);
+  // Restore product stock in memory (negative quantity to add back)
+  const stockUpdate = updateProductStock(products, productIdNum, -removedQuantity);
+  if (stockUpdate.success) {
+    logStockChange(productIdNum, -removedQuantity, stockUpdate.newStockQuantity, 'cart_removal');
   }
 
-  // Store updated cart in cookies
-  res.cookie('cart', JSON.stringify(cart), { httpOnly: true });
-
-  // Return updated cart with totals
+  // Save cart to cookies and return response
+  saveCartToCookies(res, cart);
   res.json(getDetailedCart(cart, products));
 });
 
